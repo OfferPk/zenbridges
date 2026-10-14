@@ -27,6 +27,9 @@
   const levelTitleEl = document.getElementById('level-title');
   const packNameEl = document.getElementById('pack-name');
   const islandsMeterEl = document.getElementById('islands-meter');
+  const islandProgressEl = document.getElementById('island-progress');
+  const islandProgressFillEl = document.getElementById('island-progress-fill');
+  const boardPromptEl = document.getElementById('board-prompt');
   const moveCountEl = document.getElementById('move-count');
   const hintBannerEl = document.getElementById('hint-banner');
 
@@ -122,12 +125,12 @@
     puzzleCanvas.style.width = `${size}px`;
     puzzleCanvas.style.height = `${size}px`;
 
-    puzzleCtx.scale(dpr, dpr);
+    puzzleCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     // Water canvas matches container
     waterCanvas.width = Math.floor(rect.width * dpr);
     waterCanvas.height = Math.floor(rect.height * dpr);
-    waterCtx.scale(dpr, dpr);
+    waterCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
   function setupResizeHandler() {
@@ -338,8 +341,19 @@
       }
     }
 
-    islandsMeterEl.innerHTML = `Connected: <span>${satisfiedCount}/${engine.islands.length}</span>`;
+    const totalIslands = engine.islands.length;
+    const progress = totalIslands ? Math.round((satisfiedCount / totalIslands) * 100) : 0;
+    islandsMeterEl.textContent = `${satisfiedCount}/${totalIslands}`;
+    islandProgressEl.setAttribute('aria-valuemax', String(totalIslands));
+    islandProgressEl.setAttribute('aria-valuenow', String(satisfiedCount));
+    islandProgressFillEl.style.width = `${progress}%`;
     moveCountEl.textContent = engine.moveCount;
+    btnUndo.disabled = engine.history.length === 0;
+    btnReset.disabled = engine.moveCount === 0;
+    boardPromptEl.textContent = selectedIslandId === null
+      ? 'Tap an island, then a neighbor to build a bridge.'
+      : 'Now choose a visible neighbor. Tap your selection again to cancel.';
+    puzzleCanvas.setAttribute('aria-label', `Puzzle board. ${satisfiedCount} of ${totalIslands} islands are in harmony. Tap two islands or a bridge to change a connection.`);
   }
 
   // Check victory condition
@@ -366,7 +380,18 @@
   function showVictoryModal() {
     winMovesEl.textContent = engine.moveCount;
     winIslandsEl.textContent = engine.islands.length;
-    winModal.classList.add('active');
+    setModalState(winModal, true, btnNextLevel);
+  }
+
+  function setModalState(modal, isOpen, focusTarget) {
+    const dialog = modal.querySelector('.modal-card');
+    modal.classList.toggle('active', isOpen);
+    dialog.setAttribute('aria-hidden', String(!isOpen));
+    if (isOpen && focusTarget) {
+      window.requestAnimationFrame(() => focusTarget.focus());
+    } else if (!isOpen && focusTarget) {
+      focusTarget.focus();
+    }
   }
 
   // Handle Board Click / Touch
@@ -396,11 +421,13 @@
         // Select this island
         selectedIslandId = clickedIsland.id;
         audio.playBridgeTap(1);
+        updateUI();
         render();
         return;
       } else if (selectedIslandId === clickedIsland.id) {
         // Deselect
         selectedIslandId = null;
+        updateUI();
         render();
         return;
       } else {
@@ -430,6 +457,7 @@
           // If not direct neighbor or blocked, select the new island instead
           selectedIslandId = clickedIsland.id;
           audio.playBridgeTap(1);
+          updateUI();
           render();
         }
         return;
@@ -456,6 +484,7 @@
     if (clickedEdge) {
       addWaterRipple(x, y, 35);
       selectedIslandId = null;
+      updateUI();
 
       const res = engine.cycleBridge(clickedEdge.u, clickedEdge.v);
       if (res.success) {
@@ -481,6 +510,7 @@
     // Deselect if clicked empty water
     if (selectedIslandId !== null) {
       selectedIslandId = null;
+      updateUI();
       render();
     }
   }
@@ -564,9 +594,13 @@
     if (audio.isSoundEnabled()) {
       btnSound.classList.add('active');
       btnSound.title = 'Sound On';
+      btnSound.setAttribute('aria-label', 'Mute sound');
+      btnSound.setAttribute('aria-pressed', 'true');
     } else {
       btnSound.classList.remove('active');
       btnSound.title = 'Sound Muted';
+      btnSound.setAttribute('aria-label', 'Enable sound');
+      btnSound.setAttribute('aria-pressed', 'false');
     }
   }
 
@@ -594,18 +628,21 @@
       levelGridContainer.innerHTML = '';
       for (let i = pack.range[0]; i <= pack.range[1]; i++) {
         const lvl = ZEN_BRIDGES_LEVELS[i];
-        const card = document.createElement('div');
+        const card = document.createElement('button');
+        card.type = 'button';
         card.className = 'level-card';
         if (i === currentLevelIndex) card.classList.add('current');
         if (completedLevels.has(i)) card.classList.add('completed');
+        card.setAttribute('aria-label', `Level ${lvl.id}${i === currentLevelIndex ? ', current level' : ''}${completedLevels.has(i) ? ', completed' : ''}`);
+        card.setAttribute('aria-current', i === currentLevelIndex ? 'page' : 'false');
 
         card.innerHTML = `
-          <div class="lvl-num">${lvl.id}</div>
-          ${completedLevels.has(i) ? '<div class="lvl-check">✓</div>' : ''}
+          <span class="lvl-num">${lvl.id}</span>
+          ${completedLevels.has(i) ? '<span class="lvl-check" aria-hidden="true">✓</span>' : ''}
         `;
 
         card.addEventListener('click', () => {
-          levelsModal.classList.remove('active');
+          setModalState(levelsModal, false, btnLevels);
           loadLevel(i);
         });
 
@@ -614,13 +651,20 @@
     }
 
     packs.forEach(pack => {
-      const tab = document.createElement('div');
+      const tab = document.createElement('button');
+      tab.type = 'button';
       tab.className = 'pack-tab';
       tab.dataset.pack = pack.name;
       tab.textContent = pack.name;
       if (pack.name === currentPack.name) tab.classList.add('active');
+      tab.setAttribute('aria-pressed', String(pack.name === currentPack.name));
 
-      tab.addEventListener('click', () => showPackLevels(pack));
+      tab.addEventListener('click', () => {
+        showPackLevels(pack);
+        packTabsContainer.querySelectorAll('.pack-tab').forEach(packTab => {
+          packTab.setAttribute('aria-pressed', String(packTab === tab));
+        });
+      });
       packTabsContainer.appendChild(tab);
     });
 
@@ -633,14 +677,6 @@
     puzzleCanvas.addEventListener('click', (e) => {
       handleBoardClick(e.clientX, e.clientY);
     });
-
-    // Touch support
-    puzzleCanvas.addEventListener('touchstart', (e) => {
-      if (e.touches && e.touches.length > 0) {
-        const touch = e.touches[0];
-        handleBoardClick(touch.clientX, touch.clientY);
-      }
-    }, { passive: true });
 
     // Sound button
     btnSound.addEventListener('click', () => {
@@ -681,25 +717,25 @@
     // Level select modal
     btnLevels.addEventListener('click', () => {
       populateLevelSelect();
-      levelsModal.classList.add('active');
+      setModalState(levelsModal, true, closeLevelsBtn);
     });
 
     closeLevelsBtn.addEventListener('click', () => {
-      levelsModal.classList.remove('active');
+      setModalState(levelsModal, false, btnLevels);
     });
 
     // Rules modal
     btnRules.addEventListener('click', () => {
-      rulesModal.classList.add('active');
+      setModalState(rulesModal, true, closeRulesBtn);
     });
 
     closeRulesBtn.addEventListener('click', () => {
-      rulesModal.classList.remove('active');
+      setModalState(rulesModal, false, btnRules);
     });
 
     // Next Level button
     btnNextLevel.addEventListener('click', () => {
-      winModal.classList.remove('active');
+      setModalState(winModal, false, btnLevels);
       if (currentLevelIndex < ZEN_BRIDGES_LEVELS.length - 1) {
         loadLevel(currentLevelIndex + 1);
       } else {
@@ -707,13 +743,27 @@
       }
     });
 
-    // Close modals on overlay background click
+    // Close modals on overlay background click or Escape.
+    const modalReturnFocus = new Map([
+      [levelsModal, btnLevels],
+      [rulesModal, btnRules],
+      [winModal, btnLevels]
+    ]);
     [levelsModal, rulesModal, winModal].forEach(modal => {
       modal.addEventListener('click', (e) => {
         if (e.target === modal) {
-          modal.classList.remove('active');
+          setModalState(modal, false, modalReturnFocus.get(modal));
         }
       });
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      const activeModal = [winModal, rulesModal, levelsModal].find(modal => modal.classList.contains('active'));
+      if (activeModal) {
+        e.preventDefault();
+        setModalState(activeModal, false, modalReturnFocus.get(activeModal));
+      }
     });
   }
 

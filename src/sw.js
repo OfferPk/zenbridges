@@ -2,11 +2,12 @@
  * ZenBridges - Service Worker for Offline PWA Support
  */
 
-const CACHE_NAME = 'zenbridges-v1';
+// Bump this when shell assets change so installed PWAs refresh their offline copy.
+const CACHE_NAME = 'zenbridges-v5';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
-  './styles.css',
+  './styles.css?v=5',
   './bridges-engine.js',
   './levels.js',
   './audio.js',
@@ -18,7 +19,7 @@ const ASSETS_TO_CACHE = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
+      return cache.addAll(ASSETS_TO_CACHE.map((asset) => new Request(asset, { cache: 'reload' })));
     }).then(() => self.skipWaiting())
   );
 });

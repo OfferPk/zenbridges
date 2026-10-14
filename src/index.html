@@ -11,12 +11,12 @@
   <meta name="apple-mobile-web-app-title" content="ZenBridges">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/svg+xml" href="icon.svg">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=5">
 </head>
 <body>
   <div id="app-container">
     <!-- Header -->
-    <header>
+    <header class="app-header">
       <div class="logo-group" id="header-logo">
         <svg class="bridge-icon" viewBox="0 0 24 24">
           <circle cx="5" cy="12" r="3" stroke="#2FE6C8" stroke-width="2" fill="none" />
@@ -30,13 +30,13 @@
         </div>
       </div>
       <div class="header-actions">
-        <button class="btn-icon" id="btn-sound" title="Toggle Sound" aria-label="Toggle Sound">
+        <button class="btn-icon" id="btn-sound" title="Toggle Sound" aria-label="Toggle sound" aria-pressed="false">
           <svg viewBox="0 0 24 24">
             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
             <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
           </svg>
         </button>
-        <button class="btn-icon" id="btn-levels" title="Level Select" aria-label="Level Select">
+        <button class="btn-icon" id="btn-levels" title="Choose a level" aria-label="Choose a level">
           <svg viewBox="0 0 24 24">
             <rect x="3" y="3" width="7" height="7"></rect>
             <rect x="14" y="3" width="7" height="7"></rect>
@@ -44,7 +44,7 @@
             <rect x="3" y="14" width="7" height="7"></rect>
           </svg>
         </button>
-        <button class="btn-icon" id="btn-rules" title="Game Rules" aria-label="Game Rules">
+        <button class="btn-icon" id="btn-rules" title="Game rules" aria-label="Game rules">
           <svg viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="10"></circle>
             <line x1="12" y1="16" x2="12" y2="12"></line>
@@ -54,20 +54,39 @@
       </div>
     </header>
 
-    <!-- Status Bar -->
-    <div class="status-bar">
-      <div class="status-badge" id="level-title">Level 1</div>
-      <div class="islands-meter" id="islands-meter">Connected: <span>0/5</span></div>
-      <div class="moves-count">Moves: <span id="move-count">0</span></div>
+    <!-- Puzzle progress -->
+    <section class="status-bar" aria-label="Puzzle progress">
+      <div class="level-card">
+        <span class="status-label">Current puzzle</span>
+        <span class="status-badge" id="level-title">Level 1</span>
+      </div>
+      <div class="progress-card">
+        <div class="progress-topline">
+          <span class="status-label">Islands in harmony</span>
+          <span class="islands-meter" id="islands-meter" aria-live="polite">0/5</span>
+        </div>
+        <div class="progress-track" id="island-progress" role="progressbar" aria-label="Islands in harmony" aria-valuemin="0" aria-valuemax="5" aria-valuenow="0">
+          <span id="island-progress-fill"></span>
+        </div>
+      </div>
+      <div class="moves-card">
+        <span class="status-label">Moves</span>
+        <span class="moves-count"><span id="move-count">0</span></span>
+      </div>
+    </section>
+
+    <div class="board-coach" role="status" aria-live="polite">
+      <span class="coach-light" aria-hidden="true"></span>
+      <span id="board-prompt">Tap an island, then a neighbor to build a bridge.</span>
     </div>
 
     <!-- Hint Banner -->
-    <div class="hint-banner" id="hint-banner"></div>
+    <div class="hint-banner" id="hint-banner" role="status" aria-live="polite"></div>
 
     <!-- Board Container -->
     <div class="board-container">
       <canvas id="water-canvas"></canvas>
-      <canvas id="puzzle-canvas"></canvas>
+      <canvas id="puzzle-canvas" aria-label="Puzzle board. Tap two islands or a bridge to change a connection."></canvas>
     </div>
 
     <!-- Controls Bar -->
@@ -99,10 +118,10 @@
 
     <!-- Level Select Modal -->
     <div class="modal-overlay" id="levels-modal">
-      <div class="modal-card">
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="levels-title" aria-hidden="true">
         <div class="modal-header">
-          <h2>Select Level</h2>
-          <button class="btn-icon" id="close-levels">✕</button>
+          <h2 id="levels-title">Choose a level</h2>
+          <button class="btn-icon" id="close-levels" aria-label="Close level selection">✕</button>
         </div>
         <div class="modal-body">
           <div class="pack-tabs" id="pack-tabs"></div>
@@ -113,10 +132,10 @@
 
     <!-- Rules / Help Modal -->
     <div class="modal-overlay" id="rules-modal">
-      <div class="modal-card">
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="rules-title" aria-hidden="true">
         <div class="modal-header">
-          <h2>Bridges Guide</h2>
-          <button class="btn-icon" id="close-rules">✕</button>
+          <h2 id="rules-title">How to play</h2>
+          <button class="btn-icon" id="close-rules" aria-label="Close game rules">✕</button>
         </div>
         <div class="modal-body">
           <div class="rule-item">
@@ -160,14 +179,14 @@
 
     <!-- Victory Modal -->
     <div class="modal-overlay" id="win-modal">
-      <div class="modal-card">
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="win-title" aria-hidden="true">
         <div class="victory-content">
           <div class="victory-icon">
             <svg viewBox="0 0 24 24">
               <polyline points="20 6 9 17 4 12"></polyline>
             </svg>
           </div>
-          <h2 class="victory-title">Pond in Harmony!</h2>
+          <h2 class="victory-title" id="win-title">Pond in Harmony!</h2>
           <p class="victory-msg">All islands are perfectly connected into a serene, tranquil network.</p>
           <div class="victory-stats">
             <div class="stat-item">
