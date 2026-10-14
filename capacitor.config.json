@@ -1,0 +1,9 @@
+{
+  "appId": "pk.offer.zenbridges",
+  "appName": "ZenBridges",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "android": {
+    "backgroundColor": "#061118"
+  }
+}

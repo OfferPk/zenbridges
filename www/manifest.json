@@ -1,0 +1,18 @@
+{
+  "name": "ZenBridges - Calm Island Logic Puzzle",
+  "short_name": "ZenBridges",
+  "description": "Sleek, calming offline Hashiwokakero (Bridges) island connection logic puzzle game.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#061118",
+  "theme_color": "#061118",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
