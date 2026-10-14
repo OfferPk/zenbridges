@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>ZenBridges - Calm Offline Island Logic Puzzle</title>
+  <meta name="description" content="ZenBridges is a sleek, calming offline Hashiwokakero (Bridges) island connection logic puzzle game with 50 levels and procedural water audio.">
+  <meta name="theme-color" content="#061118">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ZenBridges">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app-container">
+    <!-- Header -->
+    <header>
+      <div class="logo-group" id="header-logo">
+        <svg class="bridge-icon" viewBox="0 0 24 24">
+          <circle cx="5" cy="12" r="3" stroke="#2FE6C8" stroke-width="2" fill="none" />
+          <circle cx="19" cy="12" r="3" stroke="#2FE6C8" stroke-width="2" fill="none" />
+          <line x1="8" y1="10.5" x2="16" y2="10.5" stroke="#2FE6C8" stroke-width="1.8" />
+          <line x1="8" y1="13.5" x2="16" y2="13.5" stroke="#2FE6C8" stroke-width="1.8" />
+        </svg>
+        <div class="title-group">
+          <h1>ZenBridges</h1>
+          <div class="pack-subtitle" id="pack-name">Archipelago</div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn-icon" id="btn-sound" title="Toggle Sound" aria-label="Toggle Sound">
+          <svg viewBox="0 0 24 24">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+          </svg>
+        </button>
+        <button class="btn-icon" id="btn-levels" title="Level Select" aria-label="Level Select">
+          <svg viewBox="0 0 24 24">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+        </button>
+        <button class="btn-icon" id="btn-rules" title="Game Rules" aria-label="Game Rules">
+          <svg viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Status Bar -->
+    <div class="status-bar">
+      <div class="status-badge" id="level-title">Level 1</div>
+      <div class="islands-meter" id="islands-meter">Connected: <span>0/5</span></div>
+      <div class="moves-count">Moves: <span id="move-count">0</span></div>
+    </div>
+
+    <!-- Hint Banner -->
+    <div class="hint-banner" id="hint-banner"></div>
+
+    <!-- Board Container -->
+    <div class="board-container">
+      <canvas id="water-canvas"></canvas>
+      <canvas id="puzzle-canvas"></canvas>
+    </div>
+
+    <!-- Controls Bar -->
+    <div class="controls-bar">
+      <button class="ctrl-btn" id="btn-undo" title="Undo Move">
+        <svg viewBox="0 0 24 24">
+          <polyline points="1 4 1 10 7 10"></polyline>
+          <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+        </svg>
+        <span>Undo</span>
+      </button>
+
+      <button class="ctrl-btn" id="btn-reset" title="Reset Level">
+        <svg viewBox="0 0 24 24">
+          <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+        </svg>
+        <span>Reset</span>
+      </button>
+
+      <button class="ctrl-btn primary" id="btn-hint" title="Bridges Hint">
+        <svg viewBox="0 0 24 24">
+          <path d="M9 18h6"></path>
+          <path d="M10 22h4"></path>
+          <path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"></path>
+        </svg>
+        <span>Hint</span>
+      </button>
+    </div>
+
+    <!-- Level Select Modal -->
+    <div class="modal-overlay" id="levels-modal">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2>Select Level</h2>
+          <button class="btn-icon" id="close-levels">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="pack-tabs" id="pack-tabs"></div>
+          <div class="level-grid" id="level-grid"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rules / Help Modal -->
+    <div class="modal-overlay" id="rules-modal">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2>Bridges Guide</h2>
+          <button class="btn-icon" id="close-rules">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="rule-item">
+            <div class="rule-icon" style="color: #2FE6C8; background: rgba(47, 230, 200, 0.15);">═</div>
+            <div class="rule-info">
+              <h4>Orthogonal Bridges</h4>
+              <p>Bridges only run horizontally or vertically between islands in direct line of sight.</p>
+            </div>
+          </div>
+          <div class="rule-item">
+            <div class="rule-icon" style="color: #00E5FF; background: rgba(0, 229, 255, 0.15);">1 / 2</div>
+            <div class="rule-info">
+              <h4>Bridge Capacity</h4>
+              <p>Connect islands with single or double bridges (tap island pairs to cycle 0 → 1 → 2 → 0).</p>
+            </div>
+          </div>
+          <div class="rule-item">
+            <div class="rule-icon" style="color: #FFD166; background: rgba(255, 209, 102, 0.15);">③</div>
+            <div class="rule-info">
+              <h4>Island Numbers</h4>
+              <p>The number on each stone shows how many total bridges must connect to it.</p>
+            </div>
+          </div>
+          <div class="rule-item">
+            <div class="rule-icon" style="color: #EF476F; background: rgba(239, 71, 111, 0.15);">✕</div>
+            <div class="rule-info">
+              <h4>No Crossing</h4>
+              <p>Bridges cannot cross each other or pass through other islands.</p>
+            </div>
+          </div>
+          <div class="rule-item">
+            <div class="rule-icon" style="color: #B388FF; background: rgba(179, 136, 255, 0.15);">✦</div>
+            <div class="rule-info">
+              <h4>Connected Network</h4>
+              <p>All islands must form a single continuous interconnected network to complete the puzzle.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Victory Modal -->
+    <div class="modal-overlay" id="win-modal">
+      <div class="modal-card">
+        <div class="victory-content">
+          <div class="victory-icon">
+            <svg viewBox="0 0 24 24">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+          <h2 class="victory-title">Pond in Harmony!</h2>
+          <p class="victory-msg">All islands are perfectly connected into a serene, tranquil network.</p>
+          <div class="victory-stats">
+            <div class="stat-item">
+              <div class="stat-val" id="win-moves">0</div>
+              <div class="stat-lbl">Moves</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-val" id="win-islands">0</div>
+              <div class="stat-lbl">Islands</div>
+            </div>
+          </div>
+          <div class="victory-actions">
+            <button class="btn-primary-action" id="btn-next-level">Next Level</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="bridges-engine.js"></script>
+  <script src="levels.js"></script>
+  <script src="audio.js"></script>
+  <script src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>
